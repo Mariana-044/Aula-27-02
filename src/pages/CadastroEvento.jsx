@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function CadastroEvento({ onAdd, onRemoverTodos }) {
   const navigate = useNavigate();
-  const [titulo, setTitulo] = useState("");
-  const [data, setData] = useState("");
-  const [local, setLocal] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const location = useLocation();
+  const eventoEditado = location.state;
+
+  const [titulo, setTitulo] = useState(eventoEditado?.titulo || "");
+  const [data, setData] = useState(eventoEditado?.data || "");
+  const [local, setLocal] = useState(eventoEditado?.local || "");
+  const [descricao, setDescricao] = useState(eventoEditado?.descricao || "");
+  const [status, setStatus] = useState(eventoEditado?.status || "aberto");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -16,95 +20,84 @@ export default function CadastroEvento({ onAdd, onRemoverTodos }) {
       return;
     }
 
-    onAdd({ titulo, data, local, descricao });
+    onAdd({
+      id: eventoEditado?.id || crypto.randomUUID(),
+      titulo,
+      data,
+      local,
+      descricao,
+      status,
+    });
+
     navigate("/evento");
   }
 
   function handleClear() {
-    setTitulo("");
-    setData("");
-    setLocal("");
-    setDescricao("");
+    if (eventoEditado) {
+      // Restaurar valores originais se estiver editando
+      setTitulo(eventoEditado.titulo);
+      setData(eventoEditado.data);
+      setLocal(eventoEditado.local);
+      setDescricao(eventoEditado.descricao);
+      setStatus(eventoEditado.status);
+    } else {
+      // Limpar se for novo cadastro
+      setTitulo("");
+      setData("");
+      setLocal("");
+      setDescricao("");
+      setStatus("aberto");
+    }
   }
 
   return (
     <section className="stack">
-      <h2>Cadastrar Evento</h2>
+      <h2>{eventoEditado ? "Editar Evento" : "Cadastrar Evento"}</h2>
 
       <form className="form" onSubmit={handleSubmit}>
         <label>
           Título
-          <input
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            placeholder="Ex: Demo do sistema"
-          />
+          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} />
         </label>
 
         <label>
           Data
-          <input
-            type="date"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-          />
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} />
         </label>
 
         <label>
           Local
-          <input
-            value={local}
-            onChange={(e) => setLocal(e.target.value)}
-            placeholder="Ex: Laboratório"
-          />
+          <input value={local} onChange={(e) => setLocal(e.target.value)} />
         </label>
 
         <label>
           Descrição
-          <input
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Ex: Reunião para organizar e decidir a demo do sistema"
-          />
+          <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+        </label>
+
+        <label>
+          Status
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="aberto">Aberto</option>
+            <option value="lotado">Lotado</option>
+          </select>
         </label>
 
         <div className="buttons">
-          <div className="row">
-            <button className="btn" type="submit">
-              Criar
-            </button>
-          </div>
-
-          <div className="row">
-            <button
-              className="btn ghost"
-              type="button"
-              onClick={() => navigate("/evento")}
-            >
-              Cancelar
-            </button>
-          </div>
-
-          <div className="row">
-            <button
-              className="btn danger"
-              type="button"
-              onClick={handleClear}
-            >
-              Limpar formulário
-            </button>
-          </div>
-
-          {/* Botão "Remover todos" logo abaixo */}
-          <div className="row">
-            <button
-              className="btn danger"
-              type="button"
-              onClick={onRemoverTodos}
-            >
+          <button className="btn" type="submit">
+            {eventoEditado ? "Salvar" : "Criar"}
+          </button>
+          <button className="btn ghost" type="button" onClick={() => navigate("/evento")}>
+            Cancelar
+          </button>
+          <button className="btn danger" type="button" onClick={handleClear}>
+            {eventoEditado ? "Restaurar valores" : "Limpar formulário"}
+          </button>
+          {onRemoverTodos && (
+            <button className="btn danger" type="button" onClick={onRemoverTodos}>
               Remover todos
             </button>
-          </div>
+          )}
         </div>
       </form>
     </section>

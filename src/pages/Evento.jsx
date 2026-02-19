@@ -1,37 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import CardEvento from "../components/CardEvento";
 
 export default function Evento({ eventos, onRemover }) {
   const [buscaTitulo, setBuscaTitulo] = useState("");
   const [buscaLocal, setBuscaLocal] = useState("");
 
-  // Filtra os eventos pelo título e pelo local
-  const eventosFiltrados = eventos.filter(
-    (e) =>
-      e.titulo.toLowerCase().includes(buscaTitulo.toLowerCase()) &&
-      e.local.toLowerCase().includes(buscaLocal.toLowerCase())
-  );
+  const eventosFiltrados = useMemo(() => {
+    return eventos.filter(
+      (e) =>
+        (e.titulo?.toLowerCase() || "").includes(buscaTitulo.toLowerCase()) &&
+        (e.local?.toLowerCase() || "").includes(buscaLocal.toLowerCase())
+    );
+  }, [eventos, buscaTitulo, buscaLocal]);
 
   return (
     <section className="stack">
       <h2>Eventos</h2>
 
-      {/* Campo de busca por título */}
       <input
         type="text"
         placeholder="Buscar por título..."
         value={buscaTitulo}
         onChange={(e) => setBuscaTitulo(e.target.value)}
-        style={{ marginBottom: "1rem" }}
+        className="input"
       />
 
-      {/* Campo de busca por local */}
       <input
         type="text"
         placeholder="Buscar por local..."
         value={buscaLocal}
         onChange={(e) => setBuscaLocal(e.target.value)}
-        style={{ marginBottom: "1rem" }}
+        className="input"
       />
 
       {eventosFiltrados.length === 0 ? (
