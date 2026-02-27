@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 export default function CadastroEvento({ onAdd, onRemoverTodos }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const eventoEditado = location.state;
+  const eventoEditado = location.state || null;
 
   // States existentes
   const [titulo, setTitulo] = useState(eventoEditado?.titulo || "");
@@ -14,46 +15,59 @@ export default function CadastroEvento({ onAdd, onRemoverTodos }) {
   const [status, setStatus] = useState(eventoEditado?.status || "aberto");
 
   // Novos states
-  const [capacidadeTotal, setCapacidadeTotal] = useState(eventoEditado?.capacidadeTotal || 0);
+  const [capacidadeTotal, setCapacidadeTotal] = useState(
+    eventoEditado?.capacidadeTotal || 0
+  );
   const [mapaUrl, setMapaUrl] = useState(eventoEditado?.mapaUrl || "");
   const [fotosTexto, setFotosTexto] = useState(
-    eventoEditado?.fotos?.join("\n") || "" // se estiver editando, mostra cada foto em uma linha
+    eventoEditado?.fotos?.join("\n") || ""
   );
 
+  // Função de envio do formulário
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (!titulo || !data || !local) {
+    // Validação mínima
+    if (!titulo.trim() || !data.trim() || !local.trim()) {
       alert("Preencha todos os campos obrigatórios.");
       return;
     }
 
-    // Passo 2: transformar fotosTexto em lista
+    if (capacidadeTotal <= 0) {
+      alert("Informe uma capacidade total válida (maior que 0).");
+      return;
+    }
+
+    // Transformar fotosTexto em lista (aceita quebra de linha, vírgula ou espaço)
     const fotosLista = fotosTexto
-      .split("\n")
+      .split(/[\n, ]+/)
       .map((linha) => linha.trim())
       .filter((linha) => linha !== "");
 
-    // Passo 3: vagasRestantes começa igual à capacidadeTotal em novo evento
+    // Criar objeto do evento
     const novoEvento = {
-      id: eventoEditado?.id || crypto.randomUUID(),
+      id: eventoEditado?.id || uuidv4(),
       titulo,
       data,
       local,
       descricao,
       status,
-      capacidadeTotal,
+      capacidadeTotal: Number(capacidadeTotal),
       mapaUrl,
       fotos: fotosLista,
       vagasRestantes: eventoEditado
-        ? eventoEditado.vagasRestantes // mantém valor atual se estiver editando
-        : capacidadeTotal,             // inicia igual à capacidade se for novo
+        ? eventoEditado.vagasRestantes
+        : Number(capacidadeTotal),
     };
 
+    // Adiciona ou atualiza evento
     onAdd(novoEvento);
-    navigate("/evento"); // ✅ Checkpoint: cadastra e volta pra /evento
+
+    // Volta para lista de eventos
+    navigate("/evento");
   }
 
+  // Função para limpar ou restaurar valores
   function handleClear() {
     if (eventoEditado) {
       // Restaurar valores originais se estiver editando
@@ -85,22 +99,40 @@ export default function CadastroEvento({ onAdd, onRemoverTodos }) {
       <form className="form" onSubmit={handleSubmit}>
         <label>
           Título
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+          <input
+            type="text"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            required
+          />
         </label>
 
         <label>
           Data
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          <input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            required
+          />
         </label>
 
         <label>
           Local
-          <input value={local} onChange={(e) => setLocal(e.target.value)} />
+          <input
+            type="text"
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            required
+          />
         </label>
 
         <label>
           Descrição
-          <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+          <textarea
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
         </label>
 
         <label>
@@ -116,22 +148,24 @@ export default function CadastroEvento({ onAdd, onRemoverTodos }) {
           Capacidade Total
           <input
             type="number"
+            min="1"
             value={capacidadeTotal}
             onChange={(e) => setCapacidadeTotal(Number(e.target.value))}
+            required
           />
         </label>
 
         <label>
           URL do Mapa
           <input
-            type="text"
+            type="url"
             value={mapaUrl}
             onChange={(e) => setMapaUrl(e.target.value)}
           />
         </label>
 
         <label>
-          Fotos (uma URL por linha)
+          Fotos (uma URL por linha, vírgula ou espaço)
           <textarea
             value={fotosTexto}
             onChange={(e) => setFotosTexto(e.target.value)}
@@ -142,7 +176,11 @@ export default function CadastroEvento({ onAdd, onRemoverTodos }) {
           <button className="btn" type="submit">
             {eventoEditado ? "Salvar" : "Criar"}
           </button>
-          <button className="btn ghost" type="button" onClick={() => navigate("/evento")}>
+          <button
+            className="btn ghost"
+            type="button"
+            onClick={() => navigate("/evento")}
+          >
             Cancelar
           </button>
           <button className="btn danger" type="button" onClick={handleClear}>
