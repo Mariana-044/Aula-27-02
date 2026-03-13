@@ -15,7 +15,7 @@ export default function CardEvento({ evento }) {
       <button onClick={() => navigate("/cadastrar", { state: evento })}>
         Editar
       </button>
-    </div>
+    </div>   
   );
 }
 
